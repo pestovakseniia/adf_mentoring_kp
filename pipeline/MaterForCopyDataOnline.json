@@ -1,0 +1,73 @@
+{
+	"name": "MaterForCopyDataOnline",
+	"properties": {
+		"description": "Module 7",
+		"activities": [
+			{
+				"name": "CopyFromLakeToAzureSQL",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CopyJsonFromBlobToLake",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "CopyFromLakeToAzureSQL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "ArchiveProcessedFiles_RawOnline",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CopyFromLakeToAzureSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "ArchiveProcessedFiles_RawOnline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CopyJsonFromBlobToLake",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "CopyJsonFromBlobToLake",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-08-02T16:58:53Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

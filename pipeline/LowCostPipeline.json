@@ -1,0 +1,21 @@
+{
+	"name": "LowCostPipeline",
+	"properties": {
+		"description": "Module 10",
+		"activities": [
+			{
+				"name": "FailActivity",
+				"type": "Fail",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"message": "'FailMessageIsHere'",
+					"errorCode": "777"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-08-24T13:50:20Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

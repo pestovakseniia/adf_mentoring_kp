@@ -1,0 +1,35 @@
+{
+	"name": "CopyToDimOnlineService",
+	"properties": {
+		"description": "Module 8",
+		"activities": [
+			{
+				"name": "Populate_dboDimOnlineService",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "Populate_dboDimOnlineService",
+						"type": "DataFlowReference"
+					},
+					"integrationRuntime": {
+						"referenceName": "Azure-IR-M8",
+						"type": "IntegrationRuntimeReference"
+					},
+					"traceLevel": "Coarse"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-08-06T21:07:31Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

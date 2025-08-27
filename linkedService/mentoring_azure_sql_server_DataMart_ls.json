@@ -1,0 +1,24 @@
+{
+	"name": "mentoring_azure_sql_server_DataMart_ls",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "azure-mentoring-kp.database.windows.net",
+			"database": "DataMart",
+			"encrypt": "mandatory",
+			"trustServerCertificate": true,
+			"authenticationType": "SQL",
+			"userName": "kseniia_in_georgia",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "mentoring_akv_ls",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "azure-sql-server-pass"
+			}
+		}
+	}
+}

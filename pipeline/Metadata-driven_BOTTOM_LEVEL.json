@@ -1,0 +1,864 @@
+{
+	"name": "Metadata-driven_BOTTOM_LEVEL",
+	"properties": {
+		"description": "Module 9",
+		"activities": [
+			{
+				"name": "CopyDataWithParameters",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "GetDataFromConnectionTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SetSDTCopyActivity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "pipelineId",
+								"value": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								}
+							},
+							{
+								"name": "source_filename",
+								"value": {
+									"value": "@concat(replace(pipeline().parameters.SourceObjectName, '.csv', ''), '_', utcnow('yyyy-MM-dd_HH-mm-ss'), '.csv')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFileName": {
+								"value": "@pipeline().parameters.SourceObjectName",
+								"type": "Expression"
+							},
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"preCopyScript": {
+							"value": "@concat('TRUNCATE TABLE ', pipeline().parameters.SinkSchemaName, '.', pipeline().parameters.SinkTableName)\n",
+							"type": "Expression"
+						},
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(pipeline().parameters.Mapping)",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DataLake_raw_metadatadriven",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": {
+								"value": "@activity('GetDataFromConnectionTable').output.value[1].ContainerName\n",
+								"type": "Expression"
+							},
+							"FolderPath": {
+								"value": "@activity('GetDataFromConnectionTable').output.value[1].FolderPath",
+								"type": "Expression"
+							},
+							"ColumnDelimiter": {
+								"value": "@pipeline().parameters.ColumnDelimiter",
+								"type": "Expression"
+							},
+							"NullValue": {
+								"value": "@pipeline().parameters.NullValue",
+								"type": "Expression"
+							},
+							"Mapping": {
+								"value": "@pipeline().parameters.Mapping",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Azure_SQL_Movies",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": {
+								"value": "@pipeline().parameters.SinkSchemaName",
+								"type": "Expression"
+							},
+							"TableName": {
+								"value": "@pipeline().parameters.SinkTableName",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "GetDataFromConnectionTable",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "SetSDTLookupConnection",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT * \n\tFROM metadata.ConnectionControlTable\n\tORDER BY ConnName",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Azure_SQL_Movies_metadata_ConnectionControlTable",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "RunUpdateMainControlTableSP",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "CopyDataWithParameters",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SetSDTStoredProc",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateMainControlTable]",
+					"storedProcedureParameters": {
+						"SourceObjectName": {
+							"value": {
+								"value": "@pipeline().parameters.SourceObjectName",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SinkSchemaName": {
+							"value": {
+								"value": "@pipeline().parameters.SinkSchemaName",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SinkTableName": {
+							"value": {
+								"value": "@pipeline().parameters.SinkSchemaName",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "RunLogging",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "RunUpdateMainControlTableSP",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateLogsTable]",
+					"storedProcedureParameters": {
+						"BOTTOMPipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"BOTTOMPipelineId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SDTLookupMain": {
+							"value": {
+								"value": "@formatDateTime(pipeline().parameters.SDTLookupMain,'yyyy-MM-dd HH:mm:ss')\n",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EDTLookupMain": {
+							"value": {
+								"value": "@formatDateTime(pipeline().parameters.EDTLookupMain,'yyyy-MM-dd HH:mm:ss')\n",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SDTLookupConnection": {
+							"value": {
+								"value": "@formatDateTime(variables('SDTLookupConnection'),'yyyy-MM-dd HH:mm:ss')\n",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EDTLookupConnection": {
+							"value": {
+								"value": "@formatDateTime(variables('EDTLookupConnection'),'yyyy-MM-dd HH:mm:ss')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SDTCopyActivity": {
+							"value": {
+								"value": "@formatDateTime(variables('SDTCopyActivity'),'yyyy-MM-dd HH:mm:ss')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EDTCopyActivity": {
+							"value": {
+								"value": "@formatDateTime(variables('EDTCopyActivity'),'yyyy-MM-dd HH:mm:ss')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SDTStoredProc": {
+							"value": {
+								"value": "@formatDateTime(variables('SDTStoredProc'),'yyyy-MM-dd HH:mm:ss')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"EDTStoredProc": {
+							"value": {
+								"value": "@formatDateTime(variables('EDTStoredProc'),'yyyy-MM-dd HH:mm:ss')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"DataFromMainControlTable": {
+							"value": {
+								"value": "@string(pipeline().parameters.DataFromMainControlTable)",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"DataFromConnectionControlTable": {
+							"value": {
+								"value": "@string(activity('GetDataFromConnectionTable').output)",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"DataFromCopyActivity": {
+							"value": {
+								"value": "@string(activity('CopyDataWithParameters').output)",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"DataFromStoredProcedure": {
+							"value": {
+								"value": "@string(activity('RunUpdateMainControlTableSP').output)",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"TOPPipelineName": {
+							"value": {
+								"value": "@pipeline().parameters.TOPPipelineName",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"TOPPipelineId": {
+							"value": {
+								"value": "@pipeline().parameters.TOPPipelineId",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "SetSDTLookupConnection",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "SDTLookupConnection",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetEDTLookupConnection",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GetDataFromConnectionTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "EDTLookupConnection",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetSDTCopyActivity",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "SDTCopyActivity",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetEDTCopyActivity",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "CopyDataWithParameters",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "EDTCopyActivity",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetSDTStoredProc",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "SDTStoredProc",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetEDTStoredProc",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "RunUpdateMainControlTableSP",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "EDTStoredProc",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "RunErrorLoggingConnectionTable",
+				"description": "",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "GetDataFromConnectionTable",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateErrorsTable]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorCode": {
+							"value": {
+								"value": "@activity('GetDataFromConnectionTable').error.errorCode",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"FailureType": {
+							"value": {
+								"value": "@activity('GetDataFromConnectionTable').error.failureType",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('GetDataFromConnectionTable').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ActivityName": {
+							"value": {
+								"value": "'GetDataFromConnectionTable'",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "RunErrorLoggingCopyActivity",
+				"description": "",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "CopyDataWithParameters",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateErrorsTable]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorCode": {
+							"value": {
+								"value": "@activity('CopyDataWithParameters').error.errorCode",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"FailureType": {
+							"value": {
+								"value": "@activity('CopyDataWithParameters').error.failureType",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('CopyDataWithParameters').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ActivityName": {
+							"value": {
+								"value": "'CopyDataWithParameters'",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "RunErrorLoggingSP",
+				"description": "",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "RunUpdateMainControlTableSP",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateErrorsTable]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorCode": {
+							"value": {
+								"value": "@activity('RunUpdateMainControlTableSP').error.errorCode",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"FailureType": {
+							"value": {
+								"value": "@activity('RunUpdateMainControlTableSP').error.failureType",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('RunUpdateMainControlTableSP').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ActivityName": {
+							"value": "'CopyDataWithParameters'",
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "PostOnFail_copy2",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "RunErrorLoggingConnectionTable",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@pipeline().parameters.logicAppUrl",
+						"type": "Expression"
+					},
+					"body": {
+						"message": "This is a custom dynamic message from your pipeline with factory name @{pipeline().DataFactory}, run ID @{pipeline().RunId}, and fail reason: @{activity('GetDataFromConnectionTable').error.message}",
+						"pipelineName": "@{pipeline().Pipeline}",
+						"receiver": "@{pipeline().parameters.receiver}",
+						"status": "Fail"
+					}
+				}
+			},
+			{
+				"name": "PostOnFail_copy3",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "RunErrorLoggingCopyActivity",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@pipeline().parameters.logicAppUrl",
+						"type": "Expression"
+					},
+					"body": {
+						"message": "This is a custom dynamic message from your pipeline with factory name @{pipeline().DataFactory}, run ID @{pipeline().RunId}, and fail reason: @{activity('CopyDataWithParameters').error.message}",
+						"pipelineName": "@{pipeline().Pipeline}",
+						"receiver": "@{pipeline().parameters.receiver}",
+						"status": "Fail"
+					}
+				}
+			},
+			{
+				"name": "PostOnFail_copy4",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "RunErrorLoggingSP",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@pipeline().parameters.logicAppUrl",
+						"type": "Expression"
+					},
+					"body": {
+						"message": "This is a custom dynamic message from your pipeline with factory name @{pipeline().DataFactory}, run ID @{pipeline().RunId}, and fail reason: @{activity('RunUpdateMainControlTableSP').error.message}",
+						"pipelineName": "@{pipeline().Pipeline}",
+						"receiver": "@{pipeline().parameters.receiver}",
+						"status": "Fail"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"SourceObjectName": {
+				"type": "string"
+			},
+			"SinkSchemaName": {
+				"type": "string"
+			},
+			"SinkTableName": {
+				"type": "string"
+			},
+			"SourceConnName": {
+				"type": "string"
+			},
+			"SinkConnName": {
+				"type": "string"
+			},
+			"ColumnDelimiter": {
+				"type": "string"
+			},
+			"NullValue": {
+				"type": "string"
+			},
+			"Mapping": {
+				"type": "string"
+			},
+			"SDTLookupMain": {
+				"type": "string"
+			},
+			"EDTLookupMain": {
+				"type": "string"
+			},
+			"DataFromMainControlTable": {
+				"type": "string"
+			},
+			"TOPPipelineName": {
+				"type": "string"
+			},
+			"TOPPipelineId": {
+				"type": "string"
+			},
+			"receiver": {
+				"type": "string"
+			},
+			"logicAppUrl": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"SDTLookupConnection": {
+				"type": "String"
+			},
+			"EDTLookupConnection": {
+				"type": "String"
+			},
+			"SDTCopyActivity": {
+				"type": "String"
+			},
+			"EDTCopyActivity": {
+				"type": "String"
+			},
+			"SDTStoredProc": {
+				"type": "String"
+			},
+			"EDTStoredProc": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Metadata-driven"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-08-26T12:37:02Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

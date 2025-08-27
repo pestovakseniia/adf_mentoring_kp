@@ -1,0 +1,19 @@
+{
+	"name": "mentoring_blob_online_ls",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Module 7",
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"sasUri": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "mentoring_akv_ls",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "sas-blob-online-url"
+			}
+		}
+	}
+}

@@ -1,0 +1,72 @@
+{
+	"name": "MasterForCopyDataFromBlobToSQL",
+	"properties": {
+		"activities": [
+			{
+				"name": "CopyFromBlobToLake",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "CopyFromBlobToLake_noForEach",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CopyFromLakeToSQL",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CopyFromBlobToLake",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "CopyFromLakeToSQL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "ArchiveProcessedFiles",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CopyFromLakeToSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "ArchiveProcessedFiles_RawMovies",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-08-02T14:35:05Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

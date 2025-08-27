@@ -1,0 +1,474 @@
+{
+	"name": "Metadata-driven_TOP_LEVEL",
+	"properties": {
+		"description": "Module 9",
+		"activities": [
+			{
+				"name": "GetDataFromMainControlTable",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "SetSDTForLookupMain",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT * FROM metadata.MainControlTable WHERE IsActives = 1",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Azure_SQL_Movies_metadata_MainControlTable",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "CallBottomLevelPipelineWithParameters",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetDataFromMainControlTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetDataFromMainControlTable').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Metadata-driven_BOTTOM_LEVEL",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Metadata-driven_BOTTOM_LEVEL",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"SourceObjectName": {
+										"value": "@item().SourceObjectName",
+										"type": "Expression"
+									},
+									"SinkSchemaName": {
+										"value": "@item().SinkSchemaName",
+										"type": "Expression"
+									},
+									"SinkTableName": {
+										"value": "@item().SinkTableName",
+										"type": "Expression"
+									},
+									"SourceConnName": {
+										"value": "@item().SourceConnName",
+										"type": "Expression"
+									},
+									"SinkConnName": {
+										"value": "@item().SinkConnName",
+										"type": "Expression"
+									},
+									"ColumnDelimiter": {
+										"value": "@item().ColumnDelimiter",
+										"type": "Expression"
+									},
+									"NullValue": {
+										"value": "@item().NullValue",
+										"type": "Expression"
+									},
+									"Mapping": {
+										"value": "@item().Mapping",
+										"type": "Expression"
+									},
+									"SDTLookupMain": {
+										"value": "@variables('SDTLookupMain')",
+										"type": "Expression"
+									},
+									"EDTLookupMain": {
+										"value": "@variables('EDTLookupMain')",
+										"type": "Expression"
+									},
+									"DataFromMainControlTable": {
+										"value": "@activity('GetDataFromMainControlTable').output",
+										"type": "Expression"
+									},
+									"TOPPipelineName": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"TOPPipelineId": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"receiver": {
+										"value": "@pipeline().parameters.receiver",
+										"type": "Expression"
+									},
+									"logicAppUrl": {
+										"value": "@activity('GetLogicAppUrl').output.value",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "SetSDTForLookupMain",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GetLogicAppUrl",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "SDTLookupMain",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetEDTLookupMain",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GetDataFromMainControlTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "EDTLookupMain",
+					"value": {
+						"value": "@utcNow()",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "RunErrorLoggingMainTable",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "GetDataFromMainControlTable",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateErrorsTable]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorCode": {
+							"value": {
+								"value": "@activity('GetDataFromMainControlTable').error.errorCode",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"FailureType": {
+							"value": {
+								"value": "@activity('GetDataFromMainControlTable').error.failureType",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('GetDataFromMainControlTable').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ActivityName": {
+							"value": {
+								"value": "'GetDataFromMainControlTable'",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "RunErrorLoggingForEach",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "CallBottomLevelPipelineWithParameters",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[metadata].[UpdateErrorsTable]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorCode": {
+							"value": {
+								"value": "@activity('CallBottomLevelPipelineWithParameters').error.errorCode",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"FailureType": {
+							"value": {
+								"value": "@activity('CallBottomLevelPipelineWithParameters').error.failureType",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('CallBottomLevelPipelineWithParameters').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ActivityName": {
+							"value": {
+								"value": "'CallBottomLevelPipelineWithParameters'",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "PostOnSuccess",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "CallBottomLevelPipelineWithParameters",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@activity('GetLogicAppUrl').output.value",
+						"type": "Expression"
+					},
+					"body": {
+						"message": "This is a custom dynamic message from your pipeline with factory name @{pipeline().DataFactory}, run ID @{pipeline().RunId}.",
+						"pipelineName": "@{pipeline().Pipeline}",
+						"receiver": "@{pipeline().parameters.receiver}",
+						"status": "Success"
+					}
+				}
+			},
+			{
+				"name": "PostOnFail",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "RunErrorLoggingForEach",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@activity('GetLogicAppUrl').output.value",
+						"type": "Expression"
+					},
+					"body": {
+						"message": "This is a custom dynamic message from your pipeline with factory name @{pipeline().DataFactory}, run ID @{pipeline().RunId}, and fail reason: @{activity('CallBottomLevelPipelineWithParameters').error.message}",
+						"pipelineName": "@{pipeline().Pipeline}",
+						"receiver": "@{pipeline().parameters.receiver}",
+						"status": "Fail"
+					}
+				}
+			},
+			{
+				"name": "PostOnFail_copy1",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "RunErrorLoggingMainTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@activity('GetLogicAppUrl').output.value",
+						"type": "Expression"
+					},
+					"body": {
+						"message": "This is a custom dynamic message from your pipeline with factory name @{pipeline().DataFactory}, run ID @{pipeline().RunId}, and fail reason: @{activity('GetDataFromMainControlTable').error.message}",
+						"pipelineName": "@{pipeline().Pipeline}",
+						"receiver": "@{pipeline().parameters.receiver}",
+						"status": "Fail"
+					}
+				}
+			},
+			{
+				"name": "GetLogicAppUrl",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@pipeline().globalParameters.logic_app_secret_url",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"receiver": {
+				"type": "string",
+				"defaultValue": "kseniia_pestova@epam.com"
+			}
+		},
+		"variables": {
+			"SDTLookupMain": {
+				"type": "String"
+			},
+			"EDTLookupMain": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Metadata-driven"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-08-26T12:37:02Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

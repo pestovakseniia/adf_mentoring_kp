@@ -1,0 +1,17 @@
+{
+	"name": "Azure_SQL_Movies_metadata_WatermarkControl",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "mentoring_azure_sql_server_movies_ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "metadata",
+			"table": "WatermarkControl"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

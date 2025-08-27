@@ -1,0 +1,54 @@
+{
+	"name": "DataLake_raw_metadatadriven",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "mentoring_datalake_ls",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"ContainerName": {
+				"type": "string"
+			},
+			"FolderPath": {
+				"type": "string"
+			},
+			"ColumnDelimiter": {
+				"type": "string"
+			},
+			"NullValue": {
+				"type": "string"
+			},
+			"Mapping": {
+				"type": "object"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().FolderPath",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().ContainerName",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": {
+				"value": "@dataset().ColumnDelimiter",
+				"type": "Expression"
+			},
+			"escapeChar": "\"",
+			"firstRowAsHeader": true,
+			"nullValue": {
+				"value": "@dataset().NullValue",
+				"type": "Expression"
+			},
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

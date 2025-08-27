@@ -1,0 +1,109 @@
+{
+	"name": "Populate_dboDimOnlineService",
+	"properties": {
+		"description": "Module 8",
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Azure_SQL_Movies_dbo_tOnlineService",
+						"type": "DatasetReference"
+					},
+					"name": "tOnlineService"
+				},
+				{
+					"dataset": {
+						"referenceName": "Azure_SQL_DataMart_dbo_DimOnlineService",
+						"type": "DatasetReference"
+					},
+					"name": "DimOnlineService"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Azure_SQL_DataMart_dbo_DimOnlineService",
+						"type": "DatasetReference"
+					},
+					"name": "sink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AddCreatedDateModifiedDate"
+				},
+				{
+					"name": "combineSourceAndSink"
+				},
+				{
+					"name": "ConditionsToUpdateInsert"
+				},
+				{
+					"name": "findDelta"
+				},
+				{
+					"name": "findNotNullServiceCode"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ServiceId as integer,",
+				"          ServiceCode as string,",
+				"          ServiceName as string,",
+				"          CreatedDate as timestamp,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: false,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> tOnlineService",
+				"source(output(",
+				"          ServiceKey as integer,",
+				"          ServiceCode as string,",
+				"          ServiceName as string,",
+				"          CreatedDate as timestamp,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: false,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimOnlineService",
+				"findDelta derive(CreatedDate = iif(isNull(DimOnlineService@ServiceCode) == true(), currentUTC(), DimOnlineService@CreatedDate),",
+				"          ModifiedDate = iif(or(DimOnlineService@ServiceName != tOnlineService@ServiceName, isNull(DimOnlineService@ServiceCode) == true()), currentUTC(), DimOnlineService@ModifiedDate)) ~> AddCreatedDateModifiedDate",
+				"tOnlineService, DimOnlineService join(tOnlineService@ServiceCode == DimOnlineService@ServiceCode,",
+				"     joinType:'outer',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> combineSourceAndSink",
+				"AddCreatedDateModifiedDate alterRow(insertIf(isNull(DimOnlineService@ServiceCode)==true()),",
+				"     updateIf(DimOnlineService@ServiceName!=tOnlineService@ServiceName),",
+				"     deleteIf(isNull(tOnlineService@ServiceCode)==true())) ~> ConditionsToUpdateInsert",
+				"combineSourceAndSink filter(or(or(isNull(tOnlineService@ServiceCode) == true(), isNull(DimOnlineService@ServiceCode) == true()), tOnlineService@ServiceName != DimOnlineService@ServiceName)) ~> findDelta",
+				"ConditionsToUpdateInsert derive(ServiceCode = coalesce(tOnlineService@ServiceCode, DimOnlineService@ServiceCode)) ~> findNotNullServiceCode",
+				"findNotNullServiceCode sink(allowSchemaDrift: false,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ServiceKey as integer,",
+				"          ServiceCode as string,",
+				"          ServiceName as string,",
+				"          CreatedDate as timestamp,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     deletable:true,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['ServiceCode'],",
+				"     format: 'table',",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          ServiceCode,",
+				"          ServiceName = tOnlineService@ServiceName,",
+				"          CreatedDate,",
+				"          ModifiedDate",
+				"     )) ~> sink"
+			]
+		}
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "DailyCinemaAndCinemaTicketsPopulation",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2025-07-22T23:36:00",
+				"timeZone": "Georgian Standard Time"
+			}
+		}
+	}
+}
