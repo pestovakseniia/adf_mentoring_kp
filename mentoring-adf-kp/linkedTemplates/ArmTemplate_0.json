@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "mentoring-adf-kp"
 		},
+		"new_ls_for_sql_server_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'new_ls_for_sql_server'"
+		},
 		"mentoring_akv_ls_properties_typeProperties_baseUrl": {
 			"type": "string",
 			"defaultValue": "https://mentoring-key-vault-kp.vault.azure.net/"
@@ -14,6 +18,18 @@
 		"mentoring_datalake_ls_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://azurementoringdatalakekp.dfs.core.windows.net"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "azure-mentoring-kp.database.windows.net"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "movies"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "kseniia_in_georgia"
 		},
 		"mentoring_azure_sql_server_DataMart_ls_properties_typeProperties_server": {
 			"type": "string",
@@ -42,10 +58,6 @@
 		"mentoring_blob_au_ls_properties_typeProperties_sasUri_secretName": {
 			"type": "string",
 			"defaultValue": "sas-blob-au-url"
-		},
-		"mentoring_blob_ls_properties_typeProperties_sasUri_secretName": {
-			"type": "string",
-			"defaultValue": "sas-blob-url"
 		}
 	},
 	"variables": {
@@ -197,6 +209,28 @@
 			"properties": {
 				"type": "SelfHosted",
 				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/new_ls_for_sql_server')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('new_ls_for_sql_server_properties_typeProperties_server')]",
+					"database": "[parameters('new_ls_for_sql_server_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('new_ls_for_sql_server_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('new_ls_for_sql_server_password')]"
+					}
+				}
 			},
 			"dependsOn": []
 		},
@@ -527,28 +561,6 @@
 							"type": "LinkedServiceReference"
 						},
 						"secretName": "[parameters('mentoring_blob_au_ls_properties_typeProperties_sasUri_secretName')]"
-					}
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/mentoring_akv_ls')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/mentoring_blob_ls')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"sasUri": {
-						"type": "AzureKeyVaultSecret",
-						"store": {
-							"referenceName": "mentoring_akv_ls",
-							"type": "LinkedServiceReference"
-						},
-						"secretName": "[parameters('mentoring_blob_ls_properties_typeProperties_sasUri_secretName')]"
 					}
 				}
 			},

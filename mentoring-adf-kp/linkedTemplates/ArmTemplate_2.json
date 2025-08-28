@@ -13,6 +13,60 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/Azure_SQL_Movies_stg_cinema_tickets')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "mentoring_azure_sql_server_movies_ls",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "cinema_code",
+						"type": "nvarchar"
+					},
+					{
+						"name": "cinema_name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "movie_id",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ticket_count",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ticket_price",
+						"type": "decimal",
+						"precision": 4,
+						"scale": 1
+					},
+					{
+						"name": "transaction_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "transaction_date",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "stg",
+					"table": "cinema_tickets"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Azure_SQL_Movies_stg_credits')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -1936,7 +1990,8 @@
 				"lastPublishTime": "2025-08-15T08:11:39Z"
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/SQL_CimenaTickets_Tickets')]"
+				"[concat(variables('factoryId'), '/datasets/SQL_CimenaTickets_Tickets')]",
+				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Movies_stg_cinema_tickets')]"
 			]
 		},
 		{
@@ -3205,118 +3260,6 @@
 				},
 				"annotations": [],
 				"lastPublishTime": "2025-08-26T12:37:02Z"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Populate_dboDimMovie')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Module 8",
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "Azure_SQL_Movies_dbo_tMovies",
-								"type": "DatasetReference"
-							},
-							"name": "tMovies"
-						},
-						{
-							"dataset": {
-								"referenceName": "Azure_SQL_Movies_dbo_tMovieStatus",
-								"type": "DatasetReference"
-							},
-							"name": "tMovieStatus"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "Azure_SQL_DataMart_dbo_DimMovie",
-								"type": "DatasetReference"
-							},
-							"name": "DimMovie"
-						}
-					],
-					"transformations": [
-						{
-							"name": "AddMovieStatusCreatedDateModifiedDate"
-						},
-						{
-							"name": "tMoviesAndtMovieStatus"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          MovieId as integer,",
-						"          MovieIdNK as integer,",
-						"          Budget as integer,",
-						"          HomepagePath as string,",
-						"          Title as string,",
-						"          OriginalTitle as string,",
-						"          ReleaseDate as date,",
-						"          Revenue as long,",
-						"          Runtime as integer,",
-						"          MovieStatusId as integer,",
-						"          AvgVote as decimal(3,1),",
-						"          CreatedDate as timestamp,",
-						"          ModifiedDate as timestamp,",
-						"          SrcFileName as string",
-						"     ),",
-						"     allowSchemaDrift: false,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> tMovies",
-						"source(output(",
-						"          MovieStatusId as integer,",
-						"          MovieStatusName as string,",
-						"          CreatedDate as timestamp",
-						"     ),",
-						"     allowSchemaDrift: false,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> tMovieStatus",
-						"tMoviesAndtMovieStatus derive(MovieStatus = MovieStatusName,",
-						"          CreatedDate = currentUTC(),",
-						"          ModifiedDate = currentUTC()) ~> AddMovieStatusCreatedDateModifiedDate",
-						"tMovies, tMovieStatus join(tMovies@MovieStatusId == tMovieStatus@MovieStatusId,",
-						"     joinType:'inner',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> tMoviesAndtMovieStatus",
-						"AddMovieStatusCreatedDateModifiedDate sink(allowSchemaDrift: false,",
-						"     validateSchema: false,",
-						"     input(",
-						"          MovieKey as integer,",
-						"          MovieIdNK as integer,",
-						"          Title as string,",
-						"          ReleaseDate as date,",
-						"          Runtime as integer,",
-						"          MovieStatus as string,",
-						"          CreatedDate as timestamp,",
-						"          ModifiedDate as timestamp",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     truncate:true,",
-						"     format: 'table',",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     mapColumn(",
-						"          MovieIdNK,",
-						"          Title,",
-						"          ReleaseDate,",
-						"          Runtime,",
-						"          MovieStatus,",
-						"          CreatedDate,",
-						"          ModifiedDate",
-						"     )) ~> DimMovie"
-					]
-				}
 			},
 			"dependsOn": []
 		}

@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "mentoring-adf-kp"
 		},
+		"new_ls_for_sql_server_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'new_ls_for_sql_server'"
+		},
 		"mentoring_akv_ls_properties_typeProperties_baseUrl": {
 			"type": "string",
 			"defaultValue": "https://mentoring-key-vault-kp.vault.azure.net/"
@@ -63,6 +67,18 @@
 			"type": "string",
 			"defaultValue": "sa"
 		},
+		"new_ls_for_sql_server_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "azure-mentoring-kp.database.windows.net"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "movies"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "kseniia_in_georgia"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -90,11 +106,23 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"new_ls_for_sql_server_password": {
+						"value": "[parameters('new_ls_for_sql_server_password')]"
+					},
 					"mentoring_akv_ls_properties_typeProperties_baseUrl": {
 						"value": "[parameters('mentoring_akv_ls_properties_typeProperties_baseUrl')]"
 					},
 					"mentoring_datalake_ls_properties_typeProperties_url": {
 						"value": "[parameters('mentoring_datalake_ls_properties_typeProperties_url')]"
+					},
+					"new_ls_for_sql_server_properties_typeProperties_server": {
+						"value": "[parameters('new_ls_for_sql_server_properties_typeProperties_server')]"
+					},
+					"new_ls_for_sql_server_properties_typeProperties_database": {
+						"value": "[parameters('new_ls_for_sql_server_properties_typeProperties_database')]"
+					},
+					"new_ls_for_sql_server_properties_typeProperties_userName": {
+						"value": "[parameters('new_ls_for_sql_server_properties_typeProperties_userName')]"
 					},
 					"mentoring_azure_sql_server_DataMart_ls_properties_typeProperties_server": {
 						"value": "[parameters('mentoring_azure_sql_server_DataMart_ls_properties_typeProperties_server')]"
@@ -116,9 +144,6 @@
 					},
 					"mentoring_blob_au_ls_properties_typeProperties_sasUri_secretName": {
 						"value": "[parameters('mentoring_blob_au_ls_properties_typeProperties_sasUri_secretName')]"
-					},
-					"mentoring_blob_ls_properties_typeProperties_sasUri_secretName": {
-						"value": "[parameters('mentoring_blob_ls_properties_typeProperties_sasUri_secretName')]"
 					}
 				}
 			},
@@ -137,6 +162,9 @@
 				"parameters": {
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
+					},
+					"mentoring_blob_ls_properties_typeProperties_sasUri_secretName": {
+						"value": "[parameters('mentoring_blob_ls_properties_typeProperties_sasUri_secretName')]"
 					},
 					"mentoring_blob_online_ls_properties_typeProperties_sasUri_secretName": {
 						"value": "[parameters('mentoring_blob_online_ls_properties_typeProperties_sasUri_secretName')]"

@@ -5,6 +5,9 @@
 		"factoryName": {
 			"value": "mentoring-adf-kp"
 		},
+		"new_ls_for_sql_server_password": {
+			"value": ""
+		},
 		"mentoring_akv_ls_properties_typeProperties_baseUrl": {
 			"value": "https://mentoring-key-vault-kp.vault.azure.net/"
 		},
@@ -46,6 +49,15 @@
 		},
 		"mentoring_sql_server_ls_properties_typeProperties_userName": {
 			"value": "sa"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_server": {
+			"value": "azure-mentoring-kp.database.windows.net"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_database": {
+			"value": "movies"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_userName": {
+			"value": "kseniia_in_georgia"
 		},
 		"containerUri": {
 			"value": ""

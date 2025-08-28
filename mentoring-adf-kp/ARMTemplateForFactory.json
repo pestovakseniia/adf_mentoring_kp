@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "mentoring-adf-kp"
 		},
+		"new_ls_for_sql_server_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'new_ls_for_sql_server'"
+		},
 		"mentoring_akv_ls_properties_typeProperties_baseUrl": {
 			"type": "string",
 			"defaultValue": "https://mentoring-key-vault-kp.vault.azure.net/"
@@ -62,6 +66,18 @@
 		"mentoring_sql_server_ls_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "sa"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "azure-mentoring-kp.database.windows.net"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "movies"
+		},
+		"new_ls_for_sql_server_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "kseniia_in_georgia"
 		}
 	},
 	"variables": {
@@ -6916,6 +6932,28 @@
 				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Movies_dbo_tOnlineService')]",
 				"[concat(variables('factoryId'), '/datasets/Azure_SQL_DataMart_dbo_FactOnlinePurchase_MonthlySnapshot')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/new_ls_for_sql_server')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('new_ls_for_sql_server_properties_typeProperties_server')]",
+					"database": "[parameters('new_ls_for_sql_server_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('new_ls_for_sql_server_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('new_ls_for_sql_server_password')]"
+					}
+				}
+			},
+			"dependsOn": []
 		}
 	]
 }
