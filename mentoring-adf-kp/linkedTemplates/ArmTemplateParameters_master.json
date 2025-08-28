@@ -1,0 +1,57 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "mentoring-adf-kp"
+		},
+		"mentoring_akv_ls_properties_typeProperties_baseUrl": {
+			"value": "https://mentoring-key-vault-kp.vault.azure.net/"
+		},
+		"mentoring_azure_sql_server_DataMart_ls_properties_typeProperties_server": {
+			"value": "azure-mentoring-kp.database.windows.net"
+		},
+		"mentoring_azure_sql_server_DataMart_ls_properties_typeProperties_database": {
+			"value": "DataMart"
+		},
+		"mentoring_azure_sql_server_DataMart_ls_properties_typeProperties_userName": {
+			"value": "kseniia_in_georgia"
+		},
+		"mentoring_azure_sql_server_movies_ls_properties_typeProperties_server": {
+			"value": "azure-mentoring-kp.database.windows.net"
+		},
+		"mentoring_azure_sql_server_movies_ls_properties_typeProperties_database": {
+			"value": "movies"
+		},
+		"mentoring_azure_sql_server_movies_ls_properties_typeProperties_userName": {
+			"value": "kseniia_in_georgia"
+		},
+		"mentoring_blob_au_ls_properties_typeProperties_sasUri_secretName": {
+			"value": "sas-blob-au-url"
+		},
+		"mentoring_blob_ls_properties_typeProperties_sasUri_secretName": {
+			"value": "sas-blob-url"
+		},
+		"mentoring_blob_online_ls_properties_typeProperties_sasUri_secretName": {
+			"value": "sas-blob-online-url"
+		},
+		"mentoring_datalake_ls_properties_typeProperties_url": {
+			"value": "https://azurementoringdatalakekp.dfs.core.windows.net"
+		},
+		"mentoring_sql_server_ls_properties_typeProperties_server": {
+			"value": "EPGEBATW0028\\SQLSERVERKSENIIA"
+		},
+		"mentoring_sql_server_ls_properties_typeProperties_database": {
+			"value": "CinemaTickets"
+		},
+		"mentoring_sql_server_ls_properties_typeProperties_userName": {
+			"value": "sa"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

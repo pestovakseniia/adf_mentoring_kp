@@ -1,0 +1,6 @@
+{
+	"logic_app_secret_url": {
+		"type": "string",
+		"value": "https://mentoring-key-vault-kp.vault.azure.net/secrets/logic-app-url/485f80a4f1804ccf86bb4aa980681865?api-version=7.5"
+	}
+}
